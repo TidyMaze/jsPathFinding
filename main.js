@@ -5,13 +5,30 @@ function output(message){
     console.log(message);
 }
 
-function Edge(from, to) {
+function Edge(from, to, cost) {
     this.from = from;
     this.to = to;
+    this.cost = cost;
     this.toString = function () {
-        return '(' + from + ' -> ' + to + ')';
+        return this.from + ' -'+this.cost+'-> ' + this.to;
     };
 }
+
+Edge.withConstantCost = function(from, to){
+    return new Edge(from, to, 1);
+};
+
+function Vertex(label, id){
+    this.label = label;
+    this.id = id;
+    this.toString = function(){
+        return '(' + this.label  + ')';
+    };
+}
+
+Vertex.fromId = function(id){
+    return new Vertex(id,id);
+};
 
 function arrayContains(element, array) {
     return (array.indexOf(element) > -1);
@@ -20,24 +37,33 @@ function arrayContains(element, array) {
 function Graph() {
     this.edges = [];
     this.addEdge = function (from, to) {
-        var newEdge = new Edge(from, to);
+        var newEdge = Edge.withConstantCost(from, to);
         this.edges.push(newEdge);
     };
-    this.toString = function () { return 'edges : [' + this.edges + ' ]'; };
+    this.toString = function () { return 'edges : [' + this.edges.join(', ') + ' ]'; };
     this.findReachableNeighbors = function(v){
         return this.edges.filter(function(e){
-            return e.from == v;
+            return e.from.id == v.id;
         }).map(function(e){
             return e.to;
         });
     };
+
+    this.findCost = function (from, to) {
+        var filtered = this.edges.filter(function(e){
+            return (e.from.id == from.id) && (e.to.id == to.id);
+        });
+        if(filtered.length <= 0) return Number.POSITIVE_INFINITY;
+        return filtered[0].cost;
+    };
+
     this.findPath = function (from, to) {
         var isNotMarked = function(v){
-            return !arrayContains(v,marked);
+            return !arrayContains(v.id,marked);
         };
 
         var minDist = function(a, b){
-            return distances[a] <= distances[b] ? a : b;
+            return distances[a.id] <= distances[b.id] ? a : b;
         };
 
         function findSmallestUnmarked() {
@@ -47,13 +73,13 @@ function Graph() {
         }
 
         function reconstructPath() {
-            if (previous[to] == null) return null;
+            if (previous[to.id] == null) return null;
 
             var path = [];
             var currentVertex = to;
             do {
                 path.push(currentVertex);
-                currentVertex = previous[currentVertex];
+                currentVertex = previous[currentVertex.id];
             } while (currentVertex != null);
             return path.reverse();
         }
@@ -68,30 +94,30 @@ function Graph() {
         var previous = {};
 
         var allVertices = this.findAllVertices();
-        for(var v in allVertices){
-            if(allVertices.hasOwnProperty(v)){
-                var vertex = allVertices[v];
-                distances[vertex] = Number.POSITIVE_INFINITY;
-            }
-        }
 
-        distances[from]=0;
+        allVertices.forEach(function(vertex, curID, array){
+            distances[vertex.id] = Number.POSITIVE_INFINITY;
+        });
+
+        distances[from.id]=0;
         output('initial :');
 
         prettyPrintDistances();
+
+        var graph = this;
 
         var smallestUnmarked;
         while((smallestUnmarked = findSmallestUnmarked()) != null){
             var current = smallestUnmarked;
             output('visiting : ' + current);
-            marked.push(current);
+            marked.push(current.id);
             this.findReachableNeighbors(current).forEach(function(n){
-                var oldDistance = distances[n];
-                var distanceWithCurrent = distances[current] + 1;
+                var oldDistance = distances[n.id];
+                var distanceWithCurrent = distances[current.id] + graph.findCost(current, n);
 
                 if(distanceWithCurrent  < oldDistance){
-                    distances[n] = distanceWithCurrent;
-                    previous[n] = current;
+                    distances[n.id] = distanceWithCurrent;
+                    previous[n.id] = current;
                 }
             });
             prettyPrintDistances();
@@ -100,26 +126,27 @@ function Graph() {
         return reconstructPath();
     };
 
-    this.toGrahViz = function(){
-        function edgeWithArrow(e) {
-            return e.from + ' -> ' + e.to;
+    this.toGraphViz = function(){
+        function formatGraphVizEdge(e) {
+            return e.from.label + ' -> ' + e.to.label + ' [ label="' + e.cost + '" ];';
         }
-        return 'digraph g{' + this.edges.map(edgeWithArrow) + '}';
+        return 'digraph g{' + this.edges.map(formatGraphVizEdge).join('\n') + '}';
     };
 
     this.findAllVertices = function () {
+        var allVerticesId = [];
         var allVertices = [];
-        for (var e in this.edges) {
-            if(this.edges.hasOwnProperty(e)) {
-                var curE = this.edges[e];
-                if (!arrayContains(curE.from, allVertices)) {
-                    allVertices.push(curE.from);
-                }
-                if (!arrayContains(curE.to, allVertices)) {
-                    allVertices.push(curE.to);
-                }
+
+        this.edges.forEach(function(curE, idCur, array){
+            if (!arrayContains(curE.from.id, allVerticesId)) {
+                allVerticesId.push(curE.from.id);
+                allVertices.push(curE.from);
             }
-        }
+            if (!arrayContains(curE.to.id, allVerticesId)) {
+                allVerticesId.push(curE.to.id);
+                allVertices.push(curE.to);
+            }
+        });
         return allVertices;
     };
 
@@ -128,7 +155,10 @@ function Graph() {
 Graph.generateCircle = function(nbVertices) {
     var graph = new Graph();
     for (var numVertex = 0; numVertex < nbVertices; numVertex++) {
-        graph.addEdge(numVertex, (numVertex + 1) % nbVertices);
+        var v1 = Vertex.fromId(numVertex);
+        var v2 = Vertex.fromId((numVertex + 1) % nbVertices);
+
+        graph.addEdge(v1, v2);
     }
     return graph;
 };
@@ -142,7 +172,7 @@ function randomInArray(array) {
 Graph.generateRandom = function(nbVertices, nbEdges){
     function createVertices() {
         for (var i = 0; i < nbVertices; i++) {
-            vertices.push(i);
+            vertices.push(Vertex.fromId(i));
         }
     }
 
@@ -165,16 +195,27 @@ function prettyPath(path) {
     return path==null ? 'no path found! ' : path.join(" -> ");
 }
 
-var graph1 = Graph.generateCircle(20);
-output(graph1.toString());
-output(graph1.toGrahViz());
+function showGraphViz(gr) {
+    var element = document.getElementById("mydiv");
+    element.innerHTML += Viz(gr.toGraphViz(), "svg");
+}
 
-var path = graph1.findPath('0', '19');
-output(prettyPath(path));
+window.onload = function() {
+    var graph1 = Graph.generateCircle(20);
+    output(graph1.toString());
 
-var graph2 = Graph.generateRandom(10,30);
-output(graph2.toString());
-output(graph2.toGrahViz());
+    output(graph1.toGraphViz());
+    showGraphViz(graph1);
+    var svg = Viz("digraph { a -> b; }", "svg");
+    output(svg);
+    var path = graph1.findPath(Vertex.fromId(0), Vertex.fromId(19));
+    output(prettyPath(path));
 
-var path2 = graph2.findPath('0', '9');
-output(prettyPath(path2));
+    var graph2 = Graph.generateRandom(10, 30);
+    output(graph2.toString());
+    output(graph2.toGraphViz());
+    showGraphViz(graph2);
+
+    var path2 = graph2.findPath(Vertex.fromId(0), Vertex.fromId(9));
+    output(prettyPath(path2));
+};
