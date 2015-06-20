@@ -213,23 +213,3 @@ function showGraphViz(gr) {
     var element = document.getElementById("mydiv");
     element.innerHTML += Viz(gr.toGraphViz(), "svg");
 }
-
-window.onload = function() {
-    //var graph1 = Graph.generateCircle(20);
-    //output(graph1.toString());
-    //
-    //output(graph1.toGraphViz());
-    //showGraphViz(graph1);
-    //var svg = Viz("digraph { a -> b; }", "svg");
-    //output(svg);
-    //var path = graph1.findPath(Vertex.fromId(0), Vertex.fromId(19));
-    //output(prettyPath(path));
-
-    var graph2 = Graph.generateRandom(10, 50);
-    output(graph2.toString());
-    output(graph2.toGraphViz());
-    showGraphViz(graph2);
-
-    var path2 = graph2.findPath(Vertex.fromId(0), Vertex.fromId(9));
-    output(prettyPath(path2));
-};

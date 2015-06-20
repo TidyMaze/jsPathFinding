@@ -4,7 +4,18 @@
     <meta charset="UTF-8">
     <title></title>
     <script src="http://mdaines.github.io/viz.js/viz.js"></script>
-    <script src="main.js"></script>
+    <script src="pathFinding.js"></script>
+    <script>
+        window.onload = function() {
+            var graph2 = Graph.generateRandom(10, 50);
+            output(graph2.toString());
+            output(graph2.toGraphViz());
+            showGraphViz(graph2);
+
+            var path2 = graph2.findPath(Vertex.fromId(0), Vertex.fromId(9));
+            output(prettyPath(path2));
+        };
+    </script>
 </head>
 <body>
     <div id="mydiv"></div>
