@@ -10,7 +10,7 @@ function Edge(from, to, cost) {
     this.to = to;
     this.cost = cost;
     this.toString = function () {
-        return this.from + ' -'+this.cost+'-> ' + this.to;
+        return this.from + ' --'+this.cost+'-> ' + this.to;
     };
 }
 
@@ -40,7 +40,7 @@ function Graph() {
         var newEdge = Edge.withConstantCost(from, to);
         this.edges.push(newEdge);
     };
-    this.toString = function () { return 'edges : [' + this.edges.join(', ') + ' ]'; };
+    this.toString = function () { return 'edges : [' + this.edges.join(', ') + ']'; };
     this.findReachableNeighbors = function(v){
         return this.edges.filter(function(e){
             return e.from.id == v.id;
@@ -166,28 +166,42 @@ Graph.generateCircle = function(nbVertices) {
 function random(max) {
     return Math.floor(Math.random() * (max+1));
 }
+
 function randomInArray(array) {
     return array[random(array.length - 1)];
 }
+
 Graph.generateRandom = function(nbVertices, nbEdges){
-    function createVertices() {
-        for (var i = 0; i < nbVertices; i++) {
-            vertices.push(Vertex.fromId(i));
-        }
+
+    if(nbEdges > Math.pow(nbVertices,2)){
+        throw 'too many edges ! ('+ nbEdges + '>' + Math.pow(nbVertices,2);
     }
+
+    var allEdges = [];
 
     function createEdges() {
-        for (var i = 0; i < nbEdges; i++) {
-            var v1 = randomInArray(vertices);
-            var v2 = randomInArray(vertices);
-            graph.addEdge(v1, v2);
+        for (var i = 0; i < nbVertices; i++) {
+            for (var j = 0; j < nbVertices; j++) {
+                var v1 = Vertex.fromId(i);
+                var v2 = Vertex.fromId(j);
+                allEdges.push(Edge.withConstantCost(v1,v2));
+            }
         }
     }
-    var vertices = [];
+
+    function pickEdges() {
+        for(var i=0;i<nbEdges;i++){
+            var id = random(allEdges.length-1);
+            graph.addEdge(allEdges[id].from, allEdges[id].to);
+            allEdges.splice(id,1);
+        }
+    }
+
     var graph = new Graph();
 
-    createVertices();
     createEdges();
+    pickEdges();
+
     return graph;
 };
 
@@ -201,17 +215,17 @@ function showGraphViz(gr) {
 }
 
 window.onload = function() {
-    var graph1 = Graph.generateCircle(20);
-    output(graph1.toString());
+    //var graph1 = Graph.generateCircle(20);
+    //output(graph1.toString());
+    //
+    //output(graph1.toGraphViz());
+    //showGraphViz(graph1);
+    //var svg = Viz("digraph { a -> b; }", "svg");
+    //output(svg);
+    //var path = graph1.findPath(Vertex.fromId(0), Vertex.fromId(19));
+    //output(prettyPath(path));
 
-    output(graph1.toGraphViz());
-    showGraphViz(graph1);
-    var svg = Viz("digraph { a -> b; }", "svg");
-    output(svg);
-    var path = graph1.findPath(Vertex.fromId(0), Vertex.fromId(19));
-    output(prettyPath(path));
-
-    var graph2 = Graph.generateRandom(10, 30);
+    var graph2 = Graph.generateRandom(10, 50);
     output(graph2.toString());
     output(graph2.toGraphViz());
     showGraphViz(graph2);
