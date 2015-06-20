@@ -6,18 +6,39 @@
     <script src="http://mdaines.github.io/viz.js/viz.js"></script>
     <script src="pathFinding.js"></script>
     <script>
-        window.onload = function() {
-            var graph2 = Graph.generateRandom(10, 50);
+        function generateGraph() {
+            var nbVertices = document.getElementById('nbVertices').value;
+            var nbEdges = document.getElementById('nbEdges').value;
+
+            var graph2 = Graph.generateRandom(nbVertices, nbEdges);
             output(graph2.toString());
             output(graph2.toGraphViz());
             showGraphViz(graph2);
 
             var path2 = graph2.findPath(Vertex.fromId(0), Vertex.fromId(9));
             output(prettyPath(path2));
-        };
+        }
     </script>
 </head>
 <body>
-    <div id="mydiv"></div>
+<h1>Graph generator and solver</h1>
+<fieldset>
+    <legend>Graph :</legend>
+    <label for="nbVertices">nbVertices</label>
+    <input id="nbVertices" type="number" min="0" max="100" step="5" value="15"/>
+    <label for="nbEdges">nbEdges</label>
+    <input id="nbEdges" type="number" min="0" max="100" step="5" value="30"/>
+    <button onclick="generateGraph()">Regenerate</button>
+</fieldset>
+
+<fieldset>
+    <legend>Pathfinding (not implemented, see JS console) :</legend>
+    <label for="from">from</label>
+    <input id="from" type="number" min="0" max="100" step="1" value="0"/>
+    <label for="to">to</label>
+    <input id="to" type="number" min="0" max="100" step="1" value="0"/>
+    <button onclick="solve()">Solve</button>
+</fieldset>
+<div id="mydiv"></div>
 </body>
 </html>

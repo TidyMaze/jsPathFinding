@@ -57,6 +57,30 @@ function Graph() {
         return filtered[0].cost;
     };
 
+    this.toGraphViz = function(){
+        function formatGraphVizEdge(e) {
+            return e.from.label + ' -> ' + e.to.label + ' [ label="' + e.cost + '" ];';
+        }
+        return 'digraph g{' + this.edges.map(formatGraphVizEdge).join('\n') + '}';
+    };
+
+    this.findAllVertices = function () {
+        var allVerticesId = [];
+        var allVertices = [];
+
+        this.edges.forEach(function(curE, idCur, array){
+            if (!arrayContains(curE.from.id, allVerticesId)) {
+                allVerticesId.push(curE.from.id);
+                allVertices.push(curE.from);
+            }
+            if (!arrayContains(curE.to.id, allVerticesId)) {
+                allVerticesId.push(curE.to.id);
+                allVertices.push(curE.to);
+            }
+        });
+        return allVertices;
+    };
+
     this.findPath = function (from, to) {
         var isNotMarked = function(v){
             return !arrayContains(v.id,marked);
@@ -126,30 +150,6 @@ function Graph() {
         return reconstructPath();
     };
 
-    this.toGraphViz = function(){
-        function formatGraphVizEdge(e) {
-            return e.from.label + ' -> ' + e.to.label + ' [ label="' + e.cost + '" ];';
-        }
-        return 'digraph g{' + this.edges.map(formatGraphVizEdge).join('\n') + '}';
-    };
-
-    this.findAllVertices = function () {
-        var allVerticesId = [];
-        var allVertices = [];
-
-        this.edges.forEach(function(curE, idCur, array){
-            if (!arrayContains(curE.from.id, allVerticesId)) {
-                allVerticesId.push(curE.from.id);
-                allVertices.push(curE.from);
-            }
-            if (!arrayContains(curE.to.id, allVerticesId)) {
-                allVerticesId.push(curE.to.id);
-                allVertices.push(curE.to);
-            }
-        });
-        return allVertices;
-    };
-
 }
 
 Graph.generateCircle = function(nbVertices) {
@@ -211,5 +211,5 @@ function prettyPath(path) {
 
 function showGraphViz(gr) {
     var element = document.getElementById("mydiv");
-    element.innerHTML += Viz(gr.toGraphViz(), "svg");
+    element.innerHTML = Viz(gr.toGraphViz(), "svg");
 }
